@@ -1,13 +1,19 @@
-const forms = () => {
+import checkNumInputs from './checkNumInputs';
+
+
+const forms = (state) => {
     const form = document.querySelectorAll('form'),
           inputs = document.querySelectorAll('input'),
-          phoneInputs = document.querySelectorAll('input[name="user_phone"]');
+          modal = document.querySelector('.popup_calc_end');
 
-    phoneInputs.forEach(item => {
-        item.addEventListener('input', () => {
-            item.value = item.value.replace(/\D/, '');
-        });
-    });
+    function closeModalByTime() {
+        setTimeout(function() {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 0);
+    }
+
+    checkNumInputs('input[name="user_phone"]');
 
     const message = {
         loading: 'Загрузка...',
@@ -31,6 +37,14 @@ const forms = () => {
         });
     };
 
+    const clearProperty = () => {
+        for (let key in state) {
+            if (key !== 'form' && key !== 'type') {
+                delete state[key];
+            }
+        }
+    };
+
     form.forEach(item => {
         item.addEventListener('submit', (event) => {
             event.preventDefault();
@@ -40,21 +54,29 @@ const forms = () => {
             item.appendChild(statusMessage);
 
             const formData = new FormData(item);
+            if (item.getAttribute('data-calc') === 'end') {
+               for (let key in state) {
+                   formData.append(key, state[key]);
+               }
+            }
 
             postData('assets/server.php', formData)
                 .then(result => {
-                    console.log(result);
                     statusMessage.textContent = message.success;
                 })
                 .catch(() => statusMessage.textContent = message.failure)
                 .finally(() => {
+                    console.log('Before:', state);
+                    clearProperty();
                     clearInputs();
+                    console.log('After:', state);
                     setTimeout(() => {
                         statusMessage.remove();
+                        closeModalByTime();
                     }, 2000);
                 });
         });
-    });        
+    });
 };
 
 export default forms;
